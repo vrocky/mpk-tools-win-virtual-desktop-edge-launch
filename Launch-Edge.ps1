@@ -2,7 +2,7 @@
 <#
 .SYNOPSIS
     Opens Microsoft Edge with an isolated profile for the current virtual desktop.
-    Profile dirs: C:\EdgeProfiles\virtual_desktop_[N]\
+    Profile dirs: C:\profiles_store\EdgeProfiles\virtual_desktop_[N]\
 
 .EXAMPLE
     .\Launch-Edge.ps1
@@ -15,7 +15,7 @@ param(
 )
 
 $EdgeExe      = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
-$ProfilesRoot = "C:\EdgeProfiles"
+$ProfilesRoot = "C:\profiles_store\EdgeProfiles"
 
 # ── Get current virtual desktop number ───────────────────────────────────────
 function Get-CurrentDesktopNumber {
