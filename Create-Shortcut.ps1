@@ -1,5 +1,3 @@
-Add-Type -AssemblyName System.Drawing
-
 $edgeExe     = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $launcherPs1 = Join-Path $scriptDir "Launch-Edge.ps1"
@@ -10,6 +8,19 @@ $adminShortcut = "$desktopPath\Edge (Virtual Desktop) (Admin).lnk"
 
 if (-not (Test-Path $launcherPs1)) {
 	throw "Launcher script not found: $launcherPs1"
+}
+
+function Get-ShortcutIconLocation {
+	if (Test-Path $edgeExe) {
+		return "$edgeExe,0"
+	}
+
+	if (Test-Path $iconPath) {
+		return "$iconPath,0"
+	}
+
+	Write-Warning "Edge icon source not found. Shortcut will use the default PowerShell icon."
+	return $null
 }
 
 function Set-ShortcutRunAsAdmin {
@@ -34,12 +45,13 @@ function New-LauncherShortcut {
 
 	$wsh = New-Object -ComObject WScript.Shell
 	$lnk = $wsh.CreateShortcut($Path)
+	$iconLocation = Get-ShortcutIconLocation
 
 	$lnk.TargetPath       = "powershell.exe"
 	$lnk.Arguments        = "-ExecutionPolicy Bypass -WindowStyle Hidden -File `"$launcherPs1`""
 	$lnk.WorkingDirectory = $scriptDir
-	if (Test-Path $iconPath) {
-		$lnk.IconLocation = "$iconPath,0"
+	if ($iconLocation) {
+		$lnk.IconLocation = $iconLocation
 	}
 	$lnk.Description      = $Description
 	$lnk.Save()
@@ -49,29 +61,6 @@ function New-LauncherShortcut {
 	}
 
 	Write-Host "Shortcut   : $Path" -ForegroundColor Green
-}
-
-# ── Extract Edge icon and save as .ico ────────────────────────────────────────
-if (Test-Path $edgeExe) {
-	$srcIcon = [System.Drawing.Icon]::ExtractAssociatedIcon($edgeExe)
-
-	# Rebuild at 256x256 for a crisp shortcut icon
-	$bmp = New-Object System.Drawing.Bitmap 256, 256
-	$g   = [System.Drawing.Graphics]::FromImage($bmp)
-	$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-	$g.DrawImage($srcIcon.ToBitmap(), 0, 0, 256, 256)
-	$g.Dispose()
-
-	$resized = [System.Drawing.Icon]::FromHandle($bmp.GetHicon())
-	$fs = [System.IO.File]::OpenWrite($iconPath)
-	$resized.Save($fs)
-	$fs.Close()
-	$bmp.Dispose()
-
-	Write-Host "Icon saved : $iconPath" -ForegroundColor Green
-}
-else {
-	Write-Warning "Edge executable not found at '$edgeExe'. Shortcut will use the default PowerShell icon."
 }
 
 # ── Create desktop shortcuts (.lnk) ──────────────────────────────────────────
